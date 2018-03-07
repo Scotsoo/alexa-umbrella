@@ -1,7 +1,7 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "the weather helper",
+      "invocationName": "jack testing",
       "intents": [
         {
           "name": "DoINeedAJacketIntent",

@@ -15,22 +15,22 @@ const AlexaDeviceAddressClient = require('./AlexaDeviceAddressClient');
 const Messages = require('./Messages');
 const https = require('https')
 const APP_ID = 'amzn1.ask.skill.349a94e0-eaaf-47b8-8059-a6565b44c6e2';
-
+const request = require('request');
 const languageStrings = {
     'en': {
         translation: {
             // TODO: Update these messages to customize.
-            SKILL_NAME: 'The Weather Helper',
-            WELCOME_MESSAGE: "Welcome to %s. You can ask a question like, do I needa an umbrella? ... Now, what can I help you with?",
+            SKILL_NAME: 'Jack Testing',
+            WELCOME_MESSAGE: "Welcome to %s. You can ask a question like, do I need a jacket? ... Now, what can I help you with?",
             WELCOME_REPROMPT: 'For instructions on what you can say, please say help me.',
-            HELP_MESSAGE: "You can ask questions such as, do I needa an umbrella?...Now, what can I help you with?",
-            HELP_REPROMPT:  "You can ask questions such as, do I needa an umbrella?...Now, what can I help you with?",
+            HELP_MESSAGE: "You can ask questions such as, do I need a Jacket?...Now, what can I help you with?",
+            HELP_REPROMPT:  "You can ask questions such as, do I needa a Jacket?...Now, what can I help you with?",
             STOP_MESSAGE: 'Goodbye!'
         },
     },
     'en-GB': {
         translation: {
-            SKILL_NAME: 'The Weather Helper',
+            SKILL_NAME: 'Jack Testing',
         },
     },
 };
@@ -41,34 +41,29 @@ const PERMISSIONS = [ALL_ADDRESS_PERMISSION];
 const getWeather = function(self, addressData) {
     const { city, countryCode } = addressData;
     console.log('addressData ', addressData)
+    if (!city || !countryCode ) {
+        self.emit(":tell", Messages.ADDRESS_NOT_COMPLETE);
+        return;
+    }
     const requestOptions = {
-        host: 'api.openweathermap.org',
+        host: 'lkjahsdlkjhasdkfjhgadf',
         port: 443,
-        path: `/data/2.5/weather?q=${city},${countryCode}?apikey=e2b38bff7e9ea81cb061b98eb9abf94f`,
+        path: `/data/2.5/forecast?q=${city},${countryCode}&appid=e2b38bff7e9ea81cb061b98eb9abf94f`,
         method: 'GET',
     }
-    console.log('logging city and country: ', city, countryCode);
-    console.log('requestOptions', requestOptions)
-    https.get(requestOptions, (response) => {
-        response.on('data', (data) => {
-            data = data.toString('utf-8')
-            let responseJson = JSON.parse(data);
-            let type = response.weather[0].main;
-            self.emit(":tell", "Looks like there is " + type);
-            
-            // const deviceAddressResponse = {
-            //     statusCode: response.statusCode,
-            //     address: responsePayloadObject
-            // };
-            Promise.resolve(data)
-        });
-    }).catch((e) => {
-        console.log("BAD ERROR!!", e)
-        self.emit(":tell", "Something went wrong Jack!");
-        Promise.reject(e);
-    });
-    const ADDRESS_MESSAGE = Messages.ADDRESS_AVAILABLE +
-    `${address['addressLine1']}, ${address['stateOrRegion']}, ${address['postalCode']}`;
+    request(`http://${requestOptions.host}${requestOptions.path}`, (err, response, body) => {
+        if(err) {
+            self.emit(":tell", "There was a problem checking the weather. Maybe you can just look out the window?");
+            return;
+        }
+        var data = JSON.parse(body);
+        const willRain = [data.list[0].weather.some(m => m.main === "Rain")]
+        willRain.push(data.list[1].weather.some(m => m.main === "Rain"))
+        if (willRain.length > 1){
+            self.emit(":tell", "You should probably take an umbrella.");
+            return;
+        }
+    })
 }
 const getAddress = function(self) {
     const consentToken = self.event.context.System.user.permissions ? self.event.context.System.user.permissions.consentToken : null;

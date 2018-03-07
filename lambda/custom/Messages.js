@@ -26,6 +26,9 @@ const HELP = "You can use this skill by asking something like: whats my address?
 
 const STOP = "There is nothing to stop. Did you mean to ask something else?";
 
+const ADDRESS_NOT_COMPLETE = "The address associated with this device does not have a valid country or city. Please update this in the Amazon Alexa App";
+
+
 module.exports = {
     "WELCOME": WELCOME,
     "WHAT_DO_YOU_WANT": WHAT_DO_YOU_WANT,
@@ -37,5 +40,6 @@ module.exports = {
     "GOODBYE": GOODBYE,
     "UNHANDLED": UNHANDLED,
     "HELP": HELP,
-    "STOP": STOP
+    "STOP": STOP,
+    "ADDRESS_NOT_COMPLETE": ADDRESS_NOT_COMPLETE
 };
