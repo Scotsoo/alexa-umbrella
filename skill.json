@@ -1,26 +1,18 @@
 {
-  "skillManifest": {
+  "manifest": {
     "publishingInformation": {
       "locales": {
-        "de-DE": {
-          "name": "Assistent für Minecraft in Deutsch"
-        },
-        "en-US": {
+        "en-GB": {
           "summary": "Spend some time coming up with an interesting, succinct description.",
           "examplePhrases": [
-            "Alexa open Minecraft Helper",
-            "Alexa ask Minecraft Helper what's the recipe for a chest",
-            "Alexa ask Minecraft Helper how do I get a map"
+            "Alexa open The Weather Helper"
           ],
           "keywords": [
             "Minecraft",
             "game"
           ],
-          "name": "Minecraft Helper",
-          "description": "Sample Full Description"
-        },
-        "en-GB": {
-          "name": "British Minecraft Helper"
+          "name": "The Weather Helper",
+          "description": "Know if you need an umbrella!"
         }
       },
       "isAvailableWorldwide": true,

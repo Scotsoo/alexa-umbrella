@@ -1,7 +1,7 @@
 {
-  "name": "skill-sample-nodejs-minecraft-helper",
+  "name": "the-weather-man",
   "version": "1.0.0",
-  "description": "Minecraft Helper sample skill",
+  "description": "Basic Alexa skill to learn from",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

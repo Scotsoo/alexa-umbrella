@@ -11,60 +11,107 @@
 'use strict';
 
 const Alexa = require('alexa-sdk');
-const recipes = require('./recipes');
-
-const APP_ID = undefined; // TODO replace with your app ID (OPTIONAL).
+const AlexaDeviceAddressClient = require('./AlexaDeviceAddressClient');
+const Messages = require('./Messages');
+const https = require('https')
+const APP_ID = 'amzn1.ask.skill.349a94e0-eaaf-47b8-8059-a6565b44c6e2';
 
 const languageStrings = {
     'en': {
         translation: {
-            RECIPES: recipes.RECIPE_EN_US,
             // TODO: Update these messages to customize.
-            SKILL_NAME: 'Minecraft Helper',
-            WELCOME_MESSAGE: "Welcome to %s. You can ask a question like, what\'s the recipe for a chest? ... Now, what can I help you with?",
+            SKILL_NAME: 'The Weather Helper',
+            WELCOME_MESSAGE: "Welcome to %s. You can ask a question like, do I needa an umbrella? ... Now, what can I help you with?",
             WELCOME_REPROMPT: 'For instructions on what you can say, please say help me.',
-            DISPLAY_CARD_TITLE: '%s  - Recipe for %s.',
-            HELP_MESSAGE: "You can ask questions such as, what\'s the recipe, or, you can say exit...Now, what can I help you with?",
-            HELP_REPROMPT: "You can say things like, what\'s the recipe, or you can say exit...Now, what can I help you with?",
-            STOP_MESSAGE: 'Goodbye!',
-            RECIPE_REPEAT_MESSAGE: 'Try saying repeat.',
-            RECIPE_NOT_FOUND_MESSAGE: "I\'m sorry, I currently do not know ",
-            RECIPE_NOT_FOUND_WITH_ITEM_NAME: 'the recipe for %s. ',
-            RECIPE_NOT_FOUND_WITHOUT_ITEM_NAME: 'that recipe. ',
-            RECIPE_NOT_FOUND_REPROMPT: 'What else can I help with?',
-        },
-    },
-    'en-US': {
-        translation: {
-            RECIPES: recipes.RECIPE_EN_US,
-            SKILL_NAME: 'American Minecraft Helper',
+            HELP_MESSAGE: "You can ask questions such as, do I needa an umbrella?...Now, what can I help you with?",
+            HELP_REPROMPT:  "You can ask questions such as, do I needa an umbrella?...Now, what can I help you with?",
+            STOP_MESSAGE: 'Goodbye!'
         },
     },
     'en-GB': {
         translation: {
-            RECIPES: recipes.RECIPE_EN_GB,
-            SKILL_NAME: 'British Minecraft Helper',
-        },
-    },
-    'de': {
-        translation: {
-            RECIPES: recipes.RECIPE_DE_DE,
-            SKILL_NAME: 'Assistent für Minecraft in Deutsch',
-            WELCOME_MESSAGE: 'Willkommen bei %s. Du kannst beispielsweise die Frage stellen: Welche Rezepte gibt es für eine Truhe? ... Nun, womit kann ich dir helfen?',
-            WELCOME_REPROMPT: 'Wenn du wissen möchtest, was du sagen kannst, sag einfach „Hilf mir“.',
-            DISPLAY_CARD_TITLE: '%s - Rezept für %s.',
-            HELP_MESSAGE: 'Du kannst beispielsweise Fragen stellen wie „Wie geht das Rezept für“ oder du kannst „Beenden“ sagen ... Wie kann ich dir helfen?',
-            HELP_REPROMPT: 'Du kannst beispielsweise Sachen sagen wie „Wie geht das Rezept für“ oder du kannst „Beenden“ sagen ... Wie kann ich dir helfen?',
-            STOP_MESSAGE: 'Auf Wiedersehen!',
-            RECIPE_REPEAT_MESSAGE: 'Sage einfach „Wiederholen“.',
-            RECIPE_NOT_FOUND_MESSAGE: 'Tut mir leid, ich kenne derzeit ',
-            RECIPE_NOT_FOUND_WITH_ITEM_NAME: 'das Rezept für %s nicht. ',
-            RECIPE_NOT_FOUND_WITHOUT_ITEM_NAME: 'dieses Rezept nicht. ',
-            RECIPE_NOT_FOUND_REPROMPT: 'Womit kann ich dir sonst helfen?',
+            SKILL_NAME: 'The Weather Helper',
         },
     },
 };
+const ALL_ADDRESS_PERMISSION = "read::alexa:device:all:address";
 
+const PERMISSIONS = [ALL_ADDRESS_PERMISSION];
+
+const getWeather = function(self, addressData) {
+    const { city, countryCode } = addressData;
+    console.log('addressData ', addressData)
+    const requestOptions = {
+        host: 'api.openweathermap.org',
+        port: 443,
+        path: `/data/2.5/weather?q=${city},${countryCode}?apikey=e2b38bff7e9ea81cb061b98eb9abf94f`,
+        method: 'GET',
+    }
+    console.log('logging city and country: ', city, countryCode);
+    console.log('requestOptions', requestOptions)
+    https.get(requestOptions, (response) => {
+        response.on('data', (data) => {
+            data = data.toString('utf-8')
+            let responseJson = JSON.parse(data);
+            let type = response.weather[0].main;
+            self.emit(":tell", "Looks like there is " + type);
+            
+            // const deviceAddressResponse = {
+            //     statusCode: response.statusCode,
+            //     address: responsePayloadObject
+            // };
+            Promise.resolve(data)
+        });
+    }).catch((e) => {
+        console.log("BAD ERROR!!", e)
+        self.emit(":tell", "Something went wrong Jack!");
+        Promise.reject(e);
+    });
+    const ADDRESS_MESSAGE = Messages.ADDRESS_AVAILABLE +
+    `${address['addressLine1']}, ${address['stateOrRegion']}, ${address['postalCode']}`;
+}
+const getAddress = function(self) {
+    const consentToken = self.event.context.System.user.permissions ? self.event.context.System.user.permissions.consentToken : null;
+    if(!consentToken) {
+        self.emit(":tellWithPermissionCard", Messages.NOTIFY_MISSING_PERMISSIONS, PERMISSIONS);
+
+        // Lets terminate early since we can't do anything else.
+        return;
+    }
+    const deviceId = self.event.context.System.device.deviceId;
+    const apiEndpoint = self.event.context.System.apiEndpoint;
+
+    const alexaDeviceAddressClient = new AlexaDeviceAddressClient(apiEndpoint, deviceId, consentToken);
+    let deviceAddressRequest = alexaDeviceAddressClient.getFullAddress();
+    deviceAddressRequest.then((addressResponse) => {
+        switch(addressResponse.statusCode) {
+            case 200:
+                const address = addressResponse.address;
+                getWeather(self, address)
+
+                break;
+            case 204:
+                // This likely means that the user didn't have their address set via the companion app.
+                console.log("Successfully requested from the device address API, but no address was returned.");
+                self.emit(":tell", Messages.NO_ADDRESS);
+                break;
+            case 403:
+                console.log("The consent token we had wasn't authorized to access the user's address.");
+                self.emit(":tellWithPermissionCard", Messages.NOTIFY_MISSING_PERMISSIONS, PERMISSIONS);
+                break;
+            default:
+                self.emit(":ask", Messages.LOCATION_FAILURE, Messages.LOCATION_FAILURE);
+        }
+
+        console.info("Ending getAddressHandler()");
+    });
+
+    deviceAddressRequest.catch((error) => {
+        self.emit(":tell", Messages.ERROR);
+        console.error(error);
+        console.info("Ending getAddressHandler()");
+    });
+}
 const handlers = {
     //Use LaunchRequest, instead of NewSession if you want to use the one-shot model
     // Alexa, ask [my-skill-invocation-name] to (do something)...
@@ -77,41 +124,51 @@ const handlers = {
         this.response.speak(this.attributes.speechOutput).listen(this.attributes.repromptSpeech);
         this.emit(':responseReady');
     },
-    'RecipeIntent': function () {
-        const itemSlot = this.event.request.intent.slots.Item;
-        let itemName;
-        if (itemSlot && itemSlot.value) {
-            itemName = itemSlot.value.toLowerCase();
-        }
-
-        const cardTitle = this.t('DISPLAY_CARD_TITLE', this.t('SKILL_NAME'), itemName);
-        const myRecipes = this.t('RECIPES');
-        const recipe = myRecipes[itemName];
-
-        if (recipe) {
-            this.attributes.speechOutput = recipe;
-            this.attributes.repromptSpeech = this.t('RECIPE_REPEAT_MESSAGE');
-
-            this.response.speak(recipe).listen(this.attributes.repromptSpeech);
-            this.response.cardRenderer(cardTitle, recipe);
-            this.emit(':responseReady');
-        } else {
-            let speechOutput = this.t('RECIPE_NOT_FOUND_MESSAGE');
-            const repromptSpeech = this.t('RECIPE_NOT_FOUND_REPROMPT');
-            if (itemName) {
-                speechOutput += this.t('RECIPE_NOT_FOUND_WITH_ITEM_NAME', itemName);
-            } else {
-                speechOutput += this.t('RECIPE_NOT_FOUND_WITHOUT_ITEM_NAME');
-            }
-            speechOutput += repromptSpeech;
-
-            this.attributes.speechOutput = speechOutput;
-            this.attributes.repromptSpeech = repromptSpeech;
-
-            this.response.speak(speechOutput).listen(repromptSpeech);
-            this.emit(':responseReady');
-        }
+    'DoINeedAJacketIntent': function () {
+        const speachOutput = "Looks like you need a jacket!"
+        this.attributes.speechOutput = speachOutput;
+        getAddress(this);
+        // this.attributes.repromptSpeech = "Looks like you need a jacket!";//this.t('RECIPE_REPEAT_MESSAGE');
+        // const cardTitle = "You need a jacket!";
+        // this.response.speak(speachOutput).listen(this.attributes.repromptSpeech);
+        // this.response.cardRenderer(cardTitle, speachOutput);
+        // this.emit(':responseReady');
     },
+    // 'RecipeIntent': function () {
+    //     const itemSlot = this.event.request.intent.slots.Item;
+    //     let itemName;
+    //     if (itemSlot && itemSlot.value) {
+    //         itemName = itemSlot.value.toLowerCase();
+    //     }
+
+    //     const cardTitle = this.t('DISPLAY_CARD_TITLE', this.t('SKILL_NAME'), itemName);
+    //     const myRecipes = this.t('RECIPES');
+    //     const recipe = myRecipes[itemName];
+
+    //     if (recipe) {
+    //         this.attributes.speechOutput = recipe;
+    //         this.attributes.repromptSpeech = this.t('RECIPE_REPEAT_MESSAGE');
+
+    //         this.response.speak(recipe).listen(this.attributes.repromptSpeech);
+    //         this.response.cardRenderer(cardTitle, recipe);
+    //         this.emit(':responseReady');
+    //     } else {
+    //         let speechOutput = this.t('RECIPE_NOT_FOUND_MESSAGE');
+    //         const repromptSpeech = this.t('RECIPE_NOT_FOUND_REPROMPT');
+    //         if (itemName) {
+    //             speechOutput += this.t('RECIPE_NOT_FOUND_WITH_ITEM_NAME', itemName);
+    //         } else {
+    //             speechOutput += this.t('RECIPE_NOT_FOUND_WITHOUT_ITEM_NAME');
+    //         }
+    //         speechOutput += repromptSpeech;
+
+    //         this.attributes.speechOutput = speechOutput;
+    //         this.attributes.repromptSpeech = repromptSpeech;
+
+    //         this.response.speak(speechOutput).listen(repromptSpeech);
+    //         this.emit(':responseReady');
+    //     }
+    // },
     'AMAZON.HelpIntent': function () {
         this.attributes.speechOutput = this.t('HELP_MESSAGE');
         this.attributes.repromptSpeech = this.t('HELP_REPROMPT');

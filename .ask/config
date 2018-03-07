@@ -1,14 +1,14 @@
 {
   "deploy_settings": {
     "default": {
-      "skill_id": "",
+      "skill_id": "amzn1.ask.skill.349a94e0-eaaf-47b8-8059-a6565b44c6e2",
       "was_cloned": false,
       "merge": {
-        "skillManifest": {
+        "manifest": {
           "apis": {
             "custom": {
               "endpoint": {
-                "uri": "ask-custom-how-to-default"
+                "uri": "the-weather-man"
               }
             }
           }
