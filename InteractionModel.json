@@ -19,6 +19,13 @@
         "samples": []
       },
       {
+        "name": "DoINeedAnUmbrellaIntent",
+        "samples": [
+         "do I need an umbrella"
+        ],
+        "slots": []
+      },
+      {
         "name": "DoINeedAJacketIntent",
         "samples": [
          "do I need a jacket"

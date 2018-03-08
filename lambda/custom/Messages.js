@@ -28,6 +28,7 @@ const STOP = "There is nothing to stop. Did you mean to ask something else?";
 
 const ADDRESS_NOT_COMPLETE = "The address associated with this device does not have a valid country or city. Please update this in the Amazon Alexa App";
 
+const API_ERROR = "There was a problem checking the weather. Maybe you can just look out the window?";
 
 module.exports = {
     "WELCOME": WELCOME,
@@ -41,5 +42,6 @@ module.exports = {
     "UNHANDLED": UNHANDLED,
     "HELP": HELP,
     "STOP": STOP,
-    "ADDRESS_NOT_COMPLETE": ADDRESS_NOT_COMPLETE
+    "ADDRESS_NOT_COMPLETE": ADDRESS_NOT_COMPLETE,
+    "API_ERROR": API_ERROR
 };
