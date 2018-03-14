@@ -1,31 +1,52 @@
 const AlexaDeviceAddressClient = require('./AlexaDeviceAddressClient');
 const Messages = require('./Messages');
 const request = require('request');
+const weather = require('./Weather');
+const errors = require('./Error');
 
-const getWeather = function(addressData, next) {
-    const { city, countryCode } = addressData;
+const getWeather = function({city, countryCode}, next) {
+    weather.now({city, countryCode}, (err, data) => {
+        if(err) {
+            return next(emitErr(':tell', err.message));
+        }
+        next(null, data);
+    })
+
     if (!city || !countryCode ) {
         next(emitErr(":tell", Messages.ADDRESS_NOT_COMPLETE));
         return;
     }
-    const requestOptions = {
-        host: 'api.openweathermap.org',
-        port: 443,
-        path: `/data/2.5/forecast?q=${city},${countryCode}&appid=e2b38bff7e9ea81cb061b98eb9abf94f`,
-        method: 'GET',
-    }
-    request(`http://${requestOptions.host}${requestOptions.path}`, (err, response, body) => {
+}
+const getHourWeather = function({city, countryCode}, next) {
+    weather.fiveDay({city, countryCode}, (err, data) => {
         if(err) {
-            console.log("[ERR] - WEATHER API : data " + JSON.stringify(err))
-            return next(emitErr(':tell', Messages.API_ERROR));   
-        }
-        var data = JSON.parse(body);
-        if (data.cod != 200){
-            console.log("[ERR] - WEATHER API : data " + JSON.stringify(data));
-            return next(emitErr(':tell', Messages.API_ERROR));   
+            return next(emitErr(':tell', err.message));
         }
         next(null, data);
     })
+
+    if (!city || !countryCode ) {
+        next(emitErr(":tell", Messages.ADDRESS_NOT_COMPLETE));
+        return;
+    }
+    // const requestOptions = {
+    //     host: 'api.openweathermap.org',
+    //     port: 443,
+    //     path: `/data/2.5/forecast?q=${city},${countryCode}&appid=e2b38bff7e9ea81cb061b98eb9abf94f`,
+    //     method: 'GET',
+    // }
+    // request(`http://${requestOptions.host}${requestOptions.path}`, (err, response, body) => {
+    //     if(err) {
+    //         console.log("[ERR] - WEATHER API : data " + JSON.stringify(err))
+    //         return next(emitErr(':tell', Messages.API_ERROR));
+    //     }
+    //     var data = JSON.parse(body);
+    //     if (data.cod != 200){
+    //         console.log("[ERR] - WEATHER API : data " + JSON.stringify(data));
+    //         return next(emitErr(':tell', Messages.API_ERROR));
+    //     }
+    //     next(null, data);
+    // })
 }
 const getAddress = function(alexaContext, next) {
     console.log('Getting address')
@@ -46,7 +67,6 @@ const getAddress = function(alexaContext, next) {
                 next(null, address)
                 break;
             case 204:
-                // This likely means that the user didn't have their address set via the companion app.
                 console.log("Successfully requested from the device address API, but no address was returned.");
                 next(emitErr(":tell", Messages.NO_ADDRESS));
                 break;
@@ -93,33 +113,38 @@ const weatherIntentBase = (alexaContext, next) => {
         }
         console.log('past error')
         getWeather(address, (err, data) => {
-            console.log('got wweather')
             if(errorHandler(err, alexaContext)){
                 return next(err);
             }
-            console.log('returning')
-            
-            next(null, {data, address}) 
+            getHourWeather((address, (hourErr, hourData) => {
+                if(errorHandler(hourErr, alexaContext)){
+                    return next(hourErr);
+                }
+                next(null, {hour: hourData, current: data, address})
+            }))
         })
     });
 }
+function determineRain(weatherData) {
+    let lenToTake = 3;
+    lenToTake = data.list.length > lenToTake ? lenToTake : data.list.length;
+    const newData = data.list.slice(1,lenToTake);
+    const rainTypes = ['Rain', 'Drizzle']
+    return newData.some(l => l.weather.some(m => rainTypes.indexOf(m.main) > -1)).length > 0;
+}
 const umbrellaIntent = (alexaContext) => {
-    return weatherIntentBase(alexaContext, (err, {data, address}) => {
+    return weatherIntentBase(alexaContext, (err, {hour, current, address}) => {
         if(err){
             return;
         }
-        console.log('got data and processing')
-        let lenToTake = 3;
-        lenToTake = data.list.length > lenToTake ? lenToTake : data.list.length; 
-        const newData = data.list.slice(1,lenToTake);
-        const willRain = newData.some(l => l.weather.some(m => m.main === "Rain")).length > 0;
+        const willRain = determineRain(hour) || determineRain(current);
         if(willRain) {
             console.log('it will rain')
-            alexaContext.emit(":tell", `Looks like a wet one in ${address.city}! You should probably take an umbrella.`); 
-            return; 
+            alexaContext.emit(":tell", `Looks like a wet one in ${address.city}! You should probably take an umbrella.`);
+            return;
         } else {
             console.log('it wont rain')
-            alexaContext.emit(":tell", `It doesn't look like it's going to rain in ${address.city}. You can leave the umbrella at home today!.`); 
+            alexaContext.emit(":tell", `It doesn't look like it's going to rain in ${address.city}. You can leave the umbrella at home today!.`);
             return;
         }
     })
