@@ -18,17 +18,17 @@ const languageStrings = {
     'en': {
         translation: {
             // TODO: Update these messages to customize.
-            SKILL_NAME: 'Jack Testing',
-            WELCOME_MESSAGE: "Welcome to %s. You can ask a question like, do I need a jacket? ... Now, what can I help you with?",
+            SKILL_NAME: 'The Weather Man',
+            WELCOME_MESSAGE: "Welcome to %s. You can ask a question like, do I need an umbrella? ... Now, what can I help you with?",
             WELCOME_REPROMPT: 'For instructions on what you can say, please say help me.',
-            HELP_MESSAGE: "You can ask questions such as, do I need a Jacket?...Now, what can I help you with?",
-            HELP_REPROMPT:  "You can ask questions such as, do I needa a Jacket?...Now, what can I help you with?",
+            HELP_MESSAGE: "You can ask questions such as, do I need an umbrella?...Now, what can I help you with?",
+            HELP_REPROMPT:  "You can ask questions such as, do I needa an umbrella?...Now, what can I help you with?",
             STOP_MESSAGE: 'Goodbye!'
         },
     },
     'en-GB': {
         translation: {
-            SKILL_NAME: 'Jack Testing',
+            SKILL_NAME: 'The Weather Man',
         },
     },
 };
@@ -50,10 +50,10 @@ const handlers = {
         this.response.speak(this.attributes.speechOutput).listen(this.attributes.repromptSpeech);
         this.emit(':responseReady');
     },
-    'DoINeedAJacketIntent': function () {
-        intents.jacketIntent(this);
-        //getAddress(this);
-    },
+    // 'DoINeedAJacketIntent': function () {
+    //     intents.jacketIntent(this);
+    //     //getAddress(this);
+    // },
     'DoINeedAnUmbrellaIntent': function () {
         intents.umbrellaIntent(this);
     },

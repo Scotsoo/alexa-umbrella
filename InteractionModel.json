@@ -24,15 +24,8 @@
          "do I need an umbrella"
         ],
         "slots": []
-      },
-      {
-        "name": "DoINeedAJacketIntent",
-        "samples": [
-         "do I need a jacket"
-        ],
-        "slots": []
       }
     ],
-    "invocationName": "jack testing"
+    "invocationName": "the weather man"
   }
 }

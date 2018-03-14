@@ -3,21 +3,25 @@ const Messages = require('./Messages');
 const request = require('request');
 const weather = require('./Weather');
 const errors = require('./Error');
+const async = require('async');
 
 const getWeather = function({city, countryCode}, next) {
+    if (!city || !countryCode ) {
+        next(emitErr(":tell", Messages.ADDRESS_NOT_COMPLETE));
+        return;
+    }
     weather.now({city, countryCode}, (err, data) => {
         if(err) {
             return next(emitErr(':tell', err.message));
         }
         next(null, data);
     })
-
+}
+const getHourWeather = function({city, countryCode}, next) {
     if (!city || !countryCode ) {
         next(emitErr(":tell", Messages.ADDRESS_NOT_COMPLETE));
         return;
     }
-}
-const getHourWeather = function({city, countryCode}, next) {
     weather.fiveDay({city, countryCode}, (err, data) => {
         if(err) {
             return next(emitErr(':tell', err.message));
@@ -25,10 +29,6 @@ const getHourWeather = function({city, countryCode}, next) {
         next(null, data);
     })
 
-    if (!city || !countryCode ) {
-        next(emitErr(":tell", Messages.ADDRESS_NOT_COMPLETE));
-        return;
-    }
     // const requestOptions = {
     //     host: 'api.openweathermap.org',
     //     port: 443,
@@ -97,40 +97,38 @@ const errorHandler = (err, alexaContext) => {
     if(!err){
         return false;
     }
+    console.log(`[ERR] - errorHandler - err: ${JSON.stringify(err)}`);
     if(err.type === 'emit') {
         alexaContext.emit(err.event, err.message, err.extra);
         return true;
     }
-    console.log(`[ERR] - errorHandler - err: ${JSON.stringify(err)}`);
     alexaContext.emit(":tell", Messages.ERROR)
     return true;
 }
 const weatherIntentBase = (alexaContext, next) => {
-    getAddress(alexaContext, (err, address) => {
-        console.log("Got address - ", JSON.stringify(address));
+    async.autoInject({
+        address: cb => getAddress(alexaContext, cb),
+        current: (address, cb) => getWeather(address, cb),
+        hour: (address, cb) => getHourWeather(address, cb)
+    }, (err, data) => {
         if(errorHandler(err, alexaContext)){
             return next(err);
         }
-        console.log('past error')
-        getWeather(address, (err, data) => {
-            if(errorHandler(err, alexaContext)){
-                return next(err);
-            }
-            getHourWeather((address, (hourErr, hourData) => {
-                if(errorHandler(hourErr, alexaContext)){
-                    return next(hourErr);
-                }
-                next(null, {hour: hourData, current: data, address})
-            }))
-        })
+        next(null, data);
     });
 }
 function determineRain(weatherData) {
     let lenToTake = 3;
-    lenToTake = data.list.length > lenToTake ? lenToTake : data.list.length;
-    const newData = data.list.slice(1,lenToTake);
-    const rainTypes = ['Rain', 'Drizzle']
-    return newData.some(l => l.weather.some(m => rainTypes.indexOf(m.main) > -1)).length > 0;
+    const rainTypes = [2,3,5];
+    if (weatherData.list) {
+        lenToTake = weatherData.list.length > lenToTake ? lenToTake : weatherData.list.length;
+        const newData = weatherData.list.slice(1, lenToTake);
+        return newData.some(l => l.weather.some(m => rainTypes.some(r => m.id[0]===r)));
+    } else {
+        lenToTake = weatherData.weather.length > lenToTake ? lenToTake : weatherData.weather.length;
+        const newData = weatherData.weather.slice(1, lenToTake);
+        return newData.some(l => l.some(m => rainTypes.some(r => m.id[0]===r)));
+    }
 }
 const umbrellaIntent = (alexaContext) => {
     return weatherIntentBase(alexaContext, (err, {hour, current, address}) => {
@@ -139,11 +137,9 @@ const umbrellaIntent = (alexaContext) => {
         }
         const willRain = determineRain(hour) || determineRain(current);
         if(willRain) {
-            console.log('it will rain')
             alexaContext.emit(":tell", `Looks like a wet one in ${address.city}! You should probably take an umbrella.`);
             return;
         } else {
-            console.log('it wont rain')
             alexaContext.emit(":tell", `It doesn't look like it's going to rain in ${address.city}. You can leave the umbrella at home today!.`);
             return;
         }
