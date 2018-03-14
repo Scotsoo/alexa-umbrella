@@ -27,29 +27,9 @@ const getHourWeather = function({city, countryCode}, next) {
             return next(emitErr(':tell', err.message));
         }
         next(null, data);
-    })
-
-    // const requestOptions = {
-    //     host: 'api.openweathermap.org',
-    //     port: 443,
-    //     path: `/data/2.5/forecast?q=${city},${countryCode}&appid=e2b38bff7e9ea81cb061b98eb9abf94f`,
-    //     method: 'GET',
-    // }
-    // request(`http://${requestOptions.host}${requestOptions.path}`, (err, response, body) => {
-    //     if(err) {
-    //         console.log("[ERR] - WEATHER API : data " + JSON.stringify(err))
-    //         return next(emitErr(':tell', Messages.API_ERROR));
-    //     }
-    //     var data = JSON.parse(body);
-    //     if (data.cod != 200){
-    //         console.log("[ERR] - WEATHER API : data " + JSON.stringify(data));
-    //         return next(emitErr(':tell', Messages.API_ERROR));
-    //     }
-    //     next(null, data);
-    // })
+    });
 }
 const getAddress = function(alexaContext, next) {
-    console.log('Getting address')
     const consentToken = alexaContext.event.context.System.user.permissions ? alexaContext.event.context.System.user.permissions.consentToken : null;
     if(!consentToken) {
         alexaContext.emit(":tellWithPermissionCard", Messages.NOTIFY_MISSING_PERMISSIONS, PERMISSIONS);
@@ -67,11 +47,9 @@ const getAddress = function(alexaContext, next) {
                 next(null, address)
                 break;
             case 204:
-                console.log("Successfully requested from the device address API, but no address was returned.");
                 next(emitErr(":tell", Messages.NO_ADDRESS));
                 break;
             case 403:
-                console.log("The consent token we had wasn't authorized to access the user's address.");
                 next(emitErr(":tellWithPermissionCard", Messages.NOTIFY_MISSING_PERMISSIONS, PERMISSIONS));
                 break;
             default:

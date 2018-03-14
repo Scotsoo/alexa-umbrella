@@ -5,7 +5,7 @@
         "en-GB": {
           "summary": "Spend some time coming up with an interesting, succinct description.",
           "examplePhrases": [
-            "Alexa open The Weather Helper"
+            "Alexa open The Weather Man"
           ],
           "keywords": [
             "Weather",
@@ -13,7 +13,7 @@
             "coat",
             "rain"
           ],
-          "name": "The Weather Helper",
+          "name": "The Weather Man",
           "description": "Know if you need an umbrella!"
         }
       },
