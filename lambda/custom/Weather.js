@@ -9,7 +9,7 @@ function getWeather ({city, countryCode, endpoint}, next) {
     const requestOptions = {
         host: 'api.openweathermap.org',
         port: 443,
-        path: `/data/2.5/${endpoint}?q=${city},${countryCode}&appid=e2b38bff7e9ea81cb061b98eb9abf94f`,
+        path: `/data/2.5/${endpoint}?q=${city},${countryCode}&appid=${process.env.WEATHER_API_KEY}`,
         method: 'GET',
     }
     request(`http://${requestOptions.host}${requestOptions.path}`, (err, response, body) => {

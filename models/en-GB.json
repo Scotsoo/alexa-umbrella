@@ -6,7 +6,8 @@
         {
           "name": "DoINeedAnUmbrellaIntent",
           "samples": [
-           "do I need an umbrella"
+           "Do I need an umbrella",
+           "Will it rain today"
           ],
           "slots": []
         },

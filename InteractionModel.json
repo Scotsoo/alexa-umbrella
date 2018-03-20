@@ -21,7 +21,8 @@
       {
         "name": "DoINeedAnUmbrellaIntent",
         "samples": [
-         "do I need an umbrella"
+         "do I need an umbrella",
+         "will it rain today"
         ],
         "slots": []
       }

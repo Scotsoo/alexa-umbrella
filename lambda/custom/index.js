@@ -12,12 +12,10 @@
 
 const Alexa = require('alexa-sdk');
 const APP_ID = 'amzn1.ask.skill.349a94e0-eaaf-47b8-8059-a6565b44c6e2';
-
 const intents = require('./intents');
 const languageStrings = {
     'en': {
         translation: {
-            // TODO: Update these messages to customize.
             SKILL_NAME: 'The Weather Man',
             WELCOME_MESSAGE: "Welcome to %s. You can ask a question like, do I need an umbrella? ... Now, what can I help you with?",
             WELCOME_REPROMPT: 'For instructions on what you can say, please say help me.',
@@ -32,14 +30,9 @@ const languageStrings = {
         },
     },
 };
-const ALL_ADDRESS_PERMISSION = "read::alexa:device:all:address";
-
-const PERMISSIONS = [ALL_ADDRESS_PERMISSION];
-
-
 
 const handlers = {
-    //Use LaunchRequest, instead of NewSession if you want to use the one-shot model
+    // Use LaunchRequest, instead of NewSession if you want to use the one-shot model
     // Alexa, ask [my-skill-invocation-name] to (do something)...
     'LaunchRequest': function () {
         this.attributes.speechOutput = this.t('WELCOME_MESSAGE', this.t('SKILL_NAME'));
@@ -50,48 +43,9 @@ const handlers = {
         this.response.speak(this.attributes.speechOutput).listen(this.attributes.repromptSpeech);
         this.emit(':responseReady');
     },
-    // 'DoINeedAJacketIntent': function () {
-    //     intents.jacketIntent(this);
-    //     //getAddress(this);
-    // },
     'DoINeedAnUmbrellaIntent': function () {
         intents.umbrellaIntent(this);
     },
-    // 'RecipeIntent': function () {
-    //     const itemSlot = this.event.request.intent.slots.Item;
-    //     let itemName;
-    //     if (itemSlot && itemSlot.value) {
-    //         itemName = itemSlot.value.toLowerCase();
-    //     }
-
-    //     const cardTitle = this.t('DISPLAY_CARD_TITLE', this.t('SKILL_NAME'), itemName);
-    //     const myRecipes = this.t('RECIPES');
-    //     const recipe = myRecipes[itemName];
-
-    //     if (recipe) {
-    //         this.attributes.speechOutput = recipe;
-    //         this.attributes.repromptSpeech = this.t('RECIPE_REPEAT_MESSAGE');
-
-    //         this.response.speak(recipe).listen(this.attributes.repromptSpeech);
-    //         this.response.cardRenderer(cardTitle, recipe);
-    //         this.emit(':responseReady');
-    //     } else {
-    //         let speechOutput = this.t('RECIPE_NOT_FOUND_MESSAGE');
-    //         const repromptSpeech = this.t('RECIPE_NOT_FOUND_REPROMPT');
-    //         if (itemName) {
-    //             speechOutput += this.t('RECIPE_NOT_FOUND_WITH_ITEM_NAME', itemName);
-    //         } else {
-    //             speechOutput += this.t('RECIPE_NOT_FOUND_WITHOUT_ITEM_NAME');
-    //         }
-    //         speechOutput += repromptSpeech;
-
-    //         this.attributes.speechOutput = speechOutput;
-    //         this.attributes.repromptSpeech = repromptSpeech;
-
-    //         this.response.speak(speechOutput).listen(repromptSpeech);
-    //         this.emit(':responseReady');
-    //     }
-    // },
     'AMAZON.HelpIntent': function () {
         this.attributes.speechOutput = this.t('HELP_MESSAGE');
         this.attributes.repromptSpeech = this.t('HELP_REPROMPT');

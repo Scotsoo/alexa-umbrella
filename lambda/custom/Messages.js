@@ -8,7 +8,7 @@ const WELCOME = "Welcome to the Sample Device Address API Skill!";
 
 const WHAT_DO_YOU_WANT = "What do you want to ask?";
 
-const NOTIFY_MISSING_PERMISSIONS = "Please enable Location permissions in the Amazon Alexa app.";
+const NOTIFY_MISSING_PERMISSIONS = "The Weather Man requires your location. Please enable Location permissions in the Amazon Alexa app.";
 
 const NO_ADDRESS = "It looks like you don't have an address set. You can set your address from the companion app.";
 

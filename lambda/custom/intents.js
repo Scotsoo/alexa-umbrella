@@ -29,7 +29,11 @@ const getHourWeather = function({city, countryCode}, next) {
         next(null, data);
     });
 }
+
 const getAddress = function(alexaContext, next) {
+    const ALL_ADDRESS_PERMISSION = "read::alexa:device:all:address";
+    const PERMISSIONS = [ALL_ADDRESS_PERMISSION];
+
     const consentToken = alexaContext.event.context.System.user.permissions ? alexaContext.event.context.System.user.permissions.consentToken : null;
     if(!consentToken) {
         alexaContext.emit(":tellWithPermissionCard", Messages.NOTIFY_MISSING_PERMISSIONS, PERMISSIONS);
